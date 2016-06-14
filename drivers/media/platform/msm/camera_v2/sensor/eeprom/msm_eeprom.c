@@ -22,13 +22,18 @@
 #define CDBG(fmt, args...) pr_debug(fmt, ##args)
 
 DEFINE_MSM_MUTEX(msm_eeprom_mutex);
-uint8_t g_s5k3p3_otp_module_id = 0;
-uint8_t g_ov5670_otp_module_id = 0;
-uint8_t g_ov16880_otp_module_id = 0;
 
 #ifdef CONFIG_COMPAT
 static struct v4l2_file_operations msm_eeprom_v4l2_subdev_fops;
 #endif
+
+uint8_t g_s5k3p3_otp_module_id = 0;
+uint8_t g_s5k3p3_otp_vcm_id = 0;
+uint8_t g_ov16880_otp_module_id = 0;
+uint8_t g_ov5670_otp_module_id = 0;
+uint8_t g_s5k5e8_otp_month = 0;
+uint8_t g_s5k5e8_otp_day = 0;
+uint8_t g_s5k5e8_otp_lens_id = 0;
 
 /**
   * msm_get_read_mem_size - Get the total size for allocation
@@ -1704,6 +1709,16 @@ static int ov5670_set_otp_module_id(struct msm_eeprom_ctrl_t *e_ctrl)
 	return 0;
 }
 
+static void s5k5e8_set_otp_module_id(struct msm_eeprom_ctrl_t *e_ctrl)
+{
+	if (e_ctrl->cal_data.mapdata[0] == 1)
+	{
+		g_s5k5e8_otp_month = (uint8_t)(e_ctrl->cal_data.mapdata[3]);
+		g_s5k5e8_otp_day = (uint8_t)(e_ctrl->cal_data.mapdata[4]);
+		g_s5k5e8_otp_lens_id = (uint8_t)(e_ctrl->cal_data.mapdata[5]);
+	}
+}
+
 static int msm_eeprom_platform_probe(struct platform_device *pdev)
 {
 	int rc = 0;
@@ -1848,24 +1863,20 @@ static int msm_eeprom_platform_probe(struct platform_device *pdev)
 			CDBG("memory_data[%d] = 0x%X\n", j,
 				e_ctrl->cal_data.mapdata[j]);
 
-		if ((eb_info->eeprom_name != NULL)
-			&& ((strcmp(eb_info->eeprom_name, "s5k3p3_gt24c64") == 0)
-				|| (strcmp(eb_info->eeprom_name, "s5k3p3_omida01") == 0))) {
-			CDBG("s5k3p3 eeprom_name = %s\n", eb_info->eeprom_name);
-			s5k3p3_set_otp_module_id(e_ctrl);
+		if (eb_info->eeprom_name != NULL)
+		{
+			if (strcmp(eb_info->eeprom_name, "s5k3p3_omida01") == 0 ||
+					strcmp(eb_info->eeprom_name, "s5k3p3_gt24c64") == 0) {
+				s5k3p3_set_otp_module_id(e_ctrl);
+			} else if (strcmp(eb_info->eeprom_name, "ov16880_f16v01a") == 0 ||
+					strcmp(eb_info->eeprom_name, "ov16880_omida05") == 0) {
+				ov16880_set_otp_module_id(e_ctrl);
+			} else if (strcmp(eb_info->eeprom_name, "sunny_omi5f06") == 0) {
+				ov5670_set_otp_module_id(e_ctrl);
+			} else if (strcmp(eb_info->eeprom_name, "s5k5e8_z5e8yab") == 0) {
+				s5k5e8_set_otp_module_id(e_ctrl);
+			}
 		}
-		if ((eb_info->eeprom_name != NULL)
-			&& ((strcmp(eb_info->eeprom_name, "ov16880_f16v01a") == 0)
-				|| (strcmp(eb_info->eeprom_name, "ov16880_omida05") == 0))) {
-			CDBG("eeprom_name = %s\n", eb_info->eeprom_name);
-			ov16880_set_otp_module_id(e_ctrl);
-		}
-
-
-		if ((eb_info->eeprom_name != NULL) && (strcmp(eb_info->eeprom_name, "sunny_omi5f06") == 0))
-			ov5670_set_otp_module_id(e_ctrl);
-		else
-			CDBG("there is no need special process\n");
 
 		e_ctrl->is_supported |= msm_eeprom_match_crc(&e_ctrl->cal_data);
 
