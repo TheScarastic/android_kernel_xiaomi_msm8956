@@ -2971,7 +2971,6 @@ static int mmc_blk_cmdq_issue_rw_rq(struct mmc_queue *mq, struct request *req)
 		    && (rq_data_dir(req) == READ))
 			host->cmdq_ctx.active_small_sector_read_reqs++;
 	}
-
 	return ret;
 }
 
