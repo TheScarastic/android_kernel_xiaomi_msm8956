@@ -252,4 +252,4 @@ void rtc_sysfs_del_device(struct rtc_device *rtc)
 void __init rtc_sysfs_init(struct class *rtc_class)
 {
 	rtc_class->dev_attrs = rtc_attrs;
-}
+} 

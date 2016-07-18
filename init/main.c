@@ -471,11 +471,13 @@ static void __init mm_init(void)
 	pgtable_cache_init();
 	vmalloc_init();
 }
+int lct_hardwareid = 2;
 
 asmlinkage void __init start_kernel(void)
 {
 	char * command_line;
 	extern const struct kernel_param __start___param[], __stop___param[];
+	char *p = NULL;
 
 	/*
 	 * Need to run as early as possible, to initialize the
@@ -513,6 +515,21 @@ asmlinkage void __init start_kernel(void)
 	page_alloc_init();
 
 	pr_notice("Kernel command line: %s\n", boot_command_line);
+	p = strstr(boot_command_line, "androidboot.boardID=0");
+	if (p) {
+		lct_hardwareid = 0;
+	}
+	p = NULL;
+	p = strstr(boot_command_line, "androidboot.boardID=2");
+	if (p) {
+		lct_hardwareid = 2;
+	}
+	p = NULL;
+	p = strstr(boot_command_line, "androidboot.boardID=3");
+	if (p) {
+		lct_hardwareid = 3;
+	}
+
 	parse_early_param();
 	parse_args("Booting kernel", static_command_line, __start___param,
 		   __stop___param - __start___param,
