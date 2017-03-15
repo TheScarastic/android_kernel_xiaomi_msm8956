@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -76,13 +76,6 @@
 #include <limFT.h>
 #endif
 
-#ifdef FEATURE_WLAN_ESE
-/* These are the min/max tx power (non virtual rates) range
-   supported by prima hardware */
-#define MIN_TX_PWR_CAP    8
-#define MAX_TX_PWR_CAP    22
-
-#endif
 
 #define JOIN_FAILURE_TIMEOUT   1000   // in msecs
 /* This overhead is time for sending NOA start to host in case of GO/sending NULL data & receiving ACK 
@@ -1532,8 +1525,10 @@ __limProcessSmeScanReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
               pMlmScanReq->maxChannelTime = pScanReq->maxChannelTime;
           }
 
-          pMlmScanReq->minChannelTimeBtc = pScanReq->minChannelTimeBtc;
-          pMlmScanReq->maxChannelTimeBtc = pScanReq->maxChannelTimeBtc;
+          pMlmScanReq->min_chntime_btc_esco =
+                   pScanReq->min_chntime_btc_esco;
+          pMlmScanReq->max_chntime_btc_esco =
+                   pScanReq->max_chntime_btc_esco;
           pMlmScanReq->dot11mode = pScanReq->dot11mode;
           pMlmScanReq->p2pSearch = pScanReq->p2pSearch;
 
@@ -1861,9 +1856,7 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         psessionEntry->bWPSAssociation = pSmeJoinReq->bWPSAssociation;
 
         /* Store vendor specfic IE for CISCO AP */
-        ieLen = (pSmeJoinReq->bssDescription.length +
-                    sizeof( pSmeJoinReq->bssDescription.length ) -
-                    GET_FIELD_OFFSET( tSirBssDescription, ieFields ));
+        ieLen = GET_IE_LEN_IN_BSS(pSmeJoinReq->bssDescription.length);
 
         vendorIE = limGetVendorIEOuiPtr(pMac, SIR_MAC_CISCO_OUI,
                     SIR_MAC_CISCO_OUI_SIZE,
@@ -2068,15 +2061,14 @@ __limProcessSmeJoinReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
 
         regMax = cfgGetRegulatoryMaxTransmitPower( pMac, psessionEntry->currentOperChannel ); 
         localPowerConstraint = regMax;
-        limExtractApCapability( pMac,
-           (tANI_U8 *) psessionEntry->pLimJoinReq->bssDescription.ieFields,
-           limGetIElenFromBssDescription(&psessionEntry->pLimJoinReq->bssDescription),
-           &psessionEntry->limCurrentBssQosCaps,
-           &psessionEntry->limCurrentBssPropCap,
-           &pMac->lim.gLimCurrentBssUapsd //TBD-RAJESH  make gLimCurrentBssUapsd this session specific
-           , &localPowerConstraint,
-           psessionEntry
-           );
+        limExtractApCapability(pMac,
+          (tANI_U8 *) psessionEntry->pLimJoinReq->bssDescription.ieFields,
+          GET_IE_LEN_IN_BSS(psessionEntry->pLimJoinReq->bssDescription.length),
+          &psessionEntry->limCurrentBssQosCaps,
+          &psessionEntry->limCurrentBssPropCap,
+          &pMac->lim.gLimCurrentBssUapsd,
+          &localPowerConstraint,
+          psessionEntry);
 
 #ifdef FEATURE_WLAN_ESE
             psessionEntry->maxTxPower = limGetMaxTxPower(regMax, localPowerConstraint, pMac->roam.configParam.nTxPowerCap);
@@ -2193,7 +2185,7 @@ end:
 } /*** end __limProcessSmeJoinReq() ***/
 
 
-#ifdef FEATURE_WLAN_ESE
+#if defined FEATURE_WLAN_ESE || defined WLAN_FEATURE_VOWIFI
 tANI_U8 limGetMaxTxPower(tPowerdBm regMax, tPowerdBm apTxPower, tANI_U8 iniTxPower)
 {
     tANI_U8 maxTxPower = 0;
@@ -2350,16 +2342,15 @@ __limProcessSmeReassocReq(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                 psessionEntry->pLimReAssocReq->bssDescription.capabilityInfo;
     regMax = cfgGetRegulatoryMaxTransmitPower( pMac, psessionEntry->currentOperChannel ); 
     localPowerConstraint = regMax;
-    limExtractApCapability( pMac,
-              (tANI_U8 *) psessionEntry->pLimReAssocReq->bssDescription.ieFields,
-              limGetIElenFromBssDescription(
-                     &psessionEntry->pLimReAssocReq->bssDescription),
-              &psessionEntry->limReassocBssQosCaps,
-              &psessionEntry->limReassocBssPropCap,
-              &pMac->lim.gLimCurrentBssUapsd //TBD-RAJESH make gLimReassocBssUapsd session specific
-              , &localPowerConstraint,
-              psessionEntry
-              );
+    limExtractApCapability(pMac,
+        (tANI_U8 *) psessionEntry->pLimReAssocReq->bssDescription.ieFields,
+        GET_IE_LEN_IN_BSS(
+        psessionEntry->pLimReAssocReq->bssDescription.length),
+        &psessionEntry->limReassocBssQosCaps,
+        &psessionEntry->limReassocBssPropCap,
+        &pMac->lim.gLimCurrentBssUapsd,
+        &localPowerConstraint,
+        psessionEntry);
 
     psessionEntry->maxTxPower = VOS_MIN( regMax, (localPowerConstraint) );
     if (!psessionEntry->maxTxPower)

@@ -48,8 +48,11 @@
 #define CSR_ACTIVE_MAX_CHANNEL_TIME    40
 #define CSR_ACTIVE_MIN_CHANNEL_TIME    20
 
-#define CSR_ACTIVE_MAX_CHANNEL_TIME_BTC    120
-#define CSR_ACTIVE_MIN_CHANNEL_TIME_BTC    60
+#define CSR_ACTIVE_MAX_CHANNEL_TIME_ESCO_BTC    120
+#define CSR_ACTIVE_MIN_CHANNEL_TIME_ESCO_BTC    60
+
+#define CSR_ACTIVE_MIN_CHANNEL_TIME_SCO_BTC    20
+#define CSR_ACTIVE_MAX_CHANNEL_TIME_SCO_BTC    40
 
 #ifdef WLAN_AP_STA_CONCURRENCY
 #define CSR_PASSIVE_MAX_CHANNEL_TIME_CONC   110
@@ -138,6 +141,7 @@
 #define PER_EXCELENT_RSSI -40
 #define PER_GOOD_RSSI -55
 #define PER_POOR_RSSI -65
+#define PER_BAD_RSSI  -80
 #define PER_ROAM_EXCELLENT_RSSI_WEIGHT 100
 #define PER_ROAM_GOOD_RSSI_WEIGHT 80
 #define PER_ROAM_BAD_RSSI_WEIGHT 60
@@ -219,8 +223,19 @@ typedef struct
     tListElem *pCurEntry;
 }tScanResultList;
 
-
-
+/**
+ * csr_scan_for_ssid_context() - Callback context for SSID scan
+ *
+ * @pMac: pMac handle
+ * @sessionId: scan session id
+ * @roamId: roam Id
+ */
+struct csr_scan_for_ssid_context
+{
+    tpAniSirGlobal pMac;
+    tANI_U32 sessionId;
+    tANI_U32 roamId;
+};
 
 #define CSR_IS_ROAM_REASON( pCmd, reason ) ( (reason) == (pCmd)->roamCmd.roamReason )
 #define CSR_IS_BETTER_PREFER_VALUE(v1, v2)   ((v1) > (v2))
@@ -1088,5 +1103,7 @@ void csr_remove_bssid_from_scan_list(tpAniSirGlobal pMac,
 #ifdef WLAN_FEATURE_AP_HT40_24G
 eHalStatus csrSetHT2040Mode(tpAniSirGlobal pMac, tANI_U32 sessionId, tANI_U8 cbMode);
 #endif
+void csrValidateScanChannels(tpAniSirGlobal pMac, tCsrScanRequest *pDstReq,
+               tCsrScanRequest *pSrcReq, int new_index, tANI_U8 ch144_support);
 #endif
 

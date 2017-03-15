@@ -657,9 +657,9 @@ limSendSmeStartBssRsp(tpAniSirGlobal pMac,
 
 
                 //subtracting size of length indicator itself and size of pointer to ieFields
-                pSirSmeRsp->bssDescription.length = sizeof(tSirBssDescription) -
-                                                sizeof(tANI_U16) - sizeof(tANI_U32) +
-                                                ieLen;
+                pSirSmeRsp->bssDescription.length =
+                         ((uintptr_t)OFFSET_OF(tSirBssDescription, ieFields))
+                         - sizeof(pSirSmeRsp->bssDescription.length) + ieLen;
                 //This is the size of the message, subtracting the size of the pointer to ieFields
                 size += ieLen - sizeof(tANI_U32);
         }
@@ -1468,7 +1468,7 @@ limSendSmeDisassocInd(tpAniSirGlobal pMac, tpDphHashNode pStaDs,tpPESession pses
 
     pSirSmeDisassocInd->sessionId     =  psessionEntry->smeSessionId;
     pSirSmeDisassocInd->transactionId =  psessionEntry->transactionId;
-    pSirSmeDisassocInd->statusCode    =  pStaDs->mlmStaContext.disassocReason;
+    pSirSmeDisassocInd->statusCode    =  eSIR_SME_DEAUTH_STATUS;
     pSirSmeDisassocInd->reasonCode    =  pStaDs->mlmStaContext.disassocReason;
     pSirSmeDisassocInd->assocId       =  pStaDs->assocId;
 

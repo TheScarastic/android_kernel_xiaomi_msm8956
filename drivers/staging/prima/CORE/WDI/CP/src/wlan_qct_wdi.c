@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -16764,6 +16764,12 @@ WDI_ProcessInitScanRsp
                "Error returned WDI_ProcessInitScanRspi:%d BMPS%d",
                wdiStatus, pWDICtx->bInBmps);
   }
+  else
+  {
+     WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_ERROR,
+               "Error returned WDI_ProcessInitScanRspi:%d BMPS%d",
+               wdiStatus, pWDICtx->bInBmps);
+  }
 
   /*Notify UMAC*/
   wdiInitScanRspCb( wdiStatus, pWDICtx->pRspCBUserData);
@@ -18779,8 +18785,12 @@ WDI_ProcessStartOemDataRsp
     return WDI_STATUS_E_FAILURE;
   }
 
+  wpalMemoryZero(wdiOemDataRspParams->oemDataRsp, OEM_DATA_RSP_SIZE);
+
   /* Populate WDI structure members */
-  wpalMemoryCopy(wdiOemDataRspParams->oemDataRsp, halStartOemDataRspParams->oemDataRsp, OEM_DATA_RSP_SIZE);
+  wpalMemoryCopy(wdiOemDataRspParams->oemDataRsp,
+                 halStartOemDataRspParams->oemDataRsp,
+                 pEventData->uEventDataSize);
 
   /*Notify UMAC*/
   wdiOemDataRspCb(wdiOemDataRspParams, pWDICtx->pRspCBUserData);
@@ -22641,6 +22651,7 @@ WDI_RXMsgCTSCB
   }
 
   wdiEventData.wdiResponse = HAL_2_WDI_RSP_TYPE( pHalMsgHeader->msgType );
+  vos_log_wdi_event(wdiEventData.wdiResponse, VOS_WDI_READ);
 
   /*The message itself starts after the header*/
   wdiEventData.pEventData     = (wpt_uint8*)pMsg + sizeof(tHalMsgHeader);
@@ -27163,10 +27174,17 @@ WDI_ProcessPERRoamScanOffloadReq(WDI_ControlBlockType *pWDICtx,
    WDI_PERRoamOffloadScanCb wdiPERRoamOffloadScancb = NULL;
    tSetPerRoamConfigReq halPERRoamConfigReq;
 
+   if (!pEventData) {
+       WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                  "%s: *pEventdata is null", __func__);
+       WDI_ASSERT(0);
+       return WDI_STATUS_E_FAILURE;
+   }
+
    wdiPERRoamOffloadReq = (WDI_PERRoamOffloadScanInfo *)pEventData->pEventData;
    wdiPERRoamOffloadScancb   = (WDI_PERRoamOffloadScanCb)pEventData->pCBfnc;
 
-   if ((!pEventData) || (!wdiPERRoamOffloadReq)|| (!wdiPERRoamOffloadScancb)) {
+   if (!wdiPERRoamOffloadReq || !wdiPERRoamOffloadScancb) {
       WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
                   "%s: Invalid parameters", __func__);
       WDI_ASSERT(0);
@@ -27195,6 +27213,8 @@ WDI_ProcessPERRoamScanOffloadReq(WDI_ControlBlockType *pWDICtx,
                      wdiPERRoamOffloadReq->rateDownThreshold;
    halPERRoamConfigReq.perRoamConfigParams.isPERRoamCCAEnabled =
                      wdiPERRoamOffloadReq->isPERRoamCCAEnabled;
+   halPERRoamConfigReq.perRoamConfigParams.PERRoamFullScanThreshold =
+                     wdiPERRoamOffloadReq->PERRoamFullScanThreshold;
    halPERRoamConfigReq.perRoamConfigParams.PERroamTriggerPercent =
                      wdiPERRoamOffloadReq->PERroamTriggerPercent;
    halPERRoamConfigReq.perRoamConfigParams.PERtimerThreshold =
@@ -27206,15 +27226,18 @@ WDI_ProcessPERRoamScanOffloadReq(WDI_ControlBlockType *pWDICtx,
                    &halPERRoamConfigReq.perRoamConfigParams,
                    sizeof(halPERRoamConfigReq.perRoamConfigParams));
 
-   WPAL_TRACE( eWLAN_MODULE_DAL_CTRL,  eWLAN_PAL_TRACE_LEVEL_INFO,
-          "request_id %d waitPeriodForNextPERScan=%d rateUpThreshold=%d rateDownThreshold=%d isPERRoamCCAEnabled=%d PERtimerThreshold=%d PERroamTriggerPercent =%d",
-          halPERRoamConfigReq.perRoamConfigParams.request_id,
+   WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+          "waitPeriodForNextPERScan=%d rateUpThreshold=%d rateDownThreshold=%d isPERRoamCCAEnabled=%d",
           halPERRoamConfigReq.perRoamConfigParams.waitPeriodForNextPERScan,
           halPERRoamConfigReq.perRoamConfigParams.rateUpThreshold,
           halPERRoamConfigReq.perRoamConfigParams.rateDownThreshold,
-          halPERRoamConfigReq.perRoamConfigParams.isPERRoamCCAEnabled,
+          halPERRoamConfigReq.perRoamConfigParams.isPERRoamCCAEnabled);
+   WPAL_TRACE(eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_INFO,
+          "PERtimerThreshold=%d PERroamTriggerPercent =%d PERRoamFullScanThreshold %d",
           halPERRoamConfigReq.perRoamConfigParams.PERtimerThreshold,
-          halPERRoamConfigReq.perRoamConfigParams.PERroamTriggerPercent);
+          halPERRoamConfigReq.perRoamConfigParams.PERroamTriggerPercent,
+          halPERRoamConfigReq.perRoamConfigParams.PERRoamFullScanThreshold);
+
    return  WDI_SendMsg(pWDICtx, pSendBuffer, usSendSize,
                wdiPERRoamOffloadScancb, pEventData->pUserData,
                WDI_PER_ROAM_SCAN_OFFLOAD_RSP);
@@ -27231,10 +27254,17 @@ WDI_ProcessPERRoamScanTriggerReq(WDI_ControlBlockType *pWDICtx,
    WDI_PERRoamTriggerScanInfo *wdiPERRoamTriggerReq;
    tStartRoamScanReq halPERRoamTriggerReq;
 
+   if (!pEventData) {
+       WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
+                  "%s: pEventdata is null", __func__);
+       WDI_ASSERT(0);
+       return WDI_STATUS_E_FAILURE;
+  }
+
    wdiPERRoamTriggerReq = (WDI_PERRoamTriggerScanInfo *) pEventData->pEventData;
    wdiPERRoamTriggerScancb   = (WDI_PERRoamTriggerScanCb)pEventData->pCBfnc;
 
-   if ((!pEventData) || (!wdiPERRoamTriggerReq) || (!wdiPERRoamTriggerScancb)) {
+   if (!wdiPERRoamTriggerReq || !wdiPERRoamTriggerScancb) {
       WPAL_TRACE( eWLAN_MODULE_DAL_CTRL, eWLAN_PAL_TRACE_LEVEL_WARN,
                   "%s: Invalid parameters", __func__);
       WDI_ASSERT(0);
@@ -37659,8 +37689,6 @@ WDI_StartOemDataReqIndNew
 {
    WDI_EventInfoType      wdiEventData;
 
-  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_ERROR,
-                  "%s: %d",__func__, __LINE__);
   /*------------------------------------------------------------------------
     Sanity Check
   ------------------------------------------------------------------------*/
@@ -37704,9 +37732,6 @@ WDI_ProcessStartOemDataReqIndNew
   wpt_uint16               usDataOffset        = 0;
   tpStartOemDataReqParamsNew   pHalStartOemDataReqParamsNew;
   WDI_Status wdiStatus = WDI_STATUS_SUCCESS;
-
-  VOS_TRACE( VOS_MODULE_ID_WDI, VOS_TRACE_LEVEL_ERROR,
-                  "%s: %d",__func__, __LINE__);
 
   if (( NULL == pWDICtx ) || ( NULL == pEventData ) ||
            ( NULL == pEventData->pEventData))
