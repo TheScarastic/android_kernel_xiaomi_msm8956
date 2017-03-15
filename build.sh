@@ -17,10 +17,11 @@
 KERNEL_DIR=$PWD
 KERN_IMG=$KERNEL_DIR/arch/arm64/boot/Image
 DTBTOOL=$KERNEL_DIR/dtbToolCM
-TOOLCHAIN_DIR="/home/sanyam/abhi/dominator/tc"
-MODULES_DIR=/home/sanyam/abhi/dominator/tomato/modules
-OUT_DIR=/home/sanyam/abhi/dominator/tomato
-RESOURCE_DIR="/home/sanyam/abhi/dominator"
+
+RESOURCE_DIR="~/tools"
+TOOLCHAIN_DIR="$RESOURCE_DIR/tc"
+MODULES_DIR="$RESOURCE_DIR/kenzo/modules"
+OUT_DIR="$RESOURCE_DIR/kenzo"
 ZIP_MOVE="$RESOURCE_DIR/output"
 
 BUILD_START=$(date +"%s")
@@ -79,7 +80,7 @@ export LOCALVERSION="-Dominator™"
 
 #Dominator Kernel Details
 BASE_VER="Dominator"
-VER="-v0.1-beta-$(date +"%Y-%m-%d"-%H%M)-"
+VER="-v2.5-$(date +"%Y-%m-%d"-%H%M)-"
 Dominator_VER="$BASE_VER$VER$TC"
 
 compile_kernel ()
@@ -89,7 +90,7 @@ echo "                                                                          
 echo "                                        Compiling Dominator Kernel                               "
 echo "                                                                                                 "
 echo -e "**********************************************************************************************"
-make cyanogenmod_kenzo_defconfig
+make kenzo_defconfig
 make Image -j8
 make dtbs -j8
 make modules -j8
