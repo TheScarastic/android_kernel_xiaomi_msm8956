@@ -76,7 +76,6 @@ export ARCH=arm64
 export SUBARCH=arm64
 export KBUILD_BUILD_USER="Abhishek"
 export KBUILD_BUILD_HOST="DominatingMachine"
-export LOCALVERSION="-Dominator™"
 
 #Dominator Kernel Details
 BASE_VER="Dominator"
