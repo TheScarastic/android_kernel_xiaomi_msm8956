@@ -1129,8 +1129,8 @@ static int fb_notifier_callback(struct notifier_block *self,
 	if (evdata && evdata->data && ft5x06_data && ft5x06_data->client) {
 		blank = evdata->data;
 		if (ft5x06_data->pdata->resume_in_workqueue) {
-			if (event == FB_EARLY_EVENT_BLANK &&
-						 *blank == FB_BLANK_UNBLANK)
+			if ((event == FB_EARLY_EVENT_BLANK &&
+						 *blank == FB_BLANK_UNBLANK) || *blank == FB_BLANK_NORMAL)
 				schedule_work(&ft5x06_data->fb_notify_work);
 			else if (event == FB_EVENT_BLANK &&
 						 *blank == FB_BLANK_POWERDOWN) {
@@ -1139,7 +1139,7 @@ static int fb_notifier_callback(struct notifier_block *self,
 			}
 		} else {
 			if (event == FB_EVENT_BLANK) {
-				if (*blank == FB_BLANK_UNBLANK)
+				if (*blank == FB_BLANK_UNBLANK || *blank == FB_BLANK_NORMAL)
 					ft5x06_ts_resume(
 						&ft5x06_data->client->dev);
 				else if (*blank == FB_BLANK_POWERDOWN)
