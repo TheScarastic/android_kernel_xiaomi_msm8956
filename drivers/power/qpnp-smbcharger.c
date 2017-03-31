@@ -40,8 +40,6 @@
 #include <linux/ktime.h>
 #include "pmic-voter.h"
 
-int FG_charger_status = 0;
-
 /* Mask/Bit helpers */
 #define _SMB_MASK(BITS, POS) \
 	((unsigned char)(((1 << (BITS)) - 1) << (POS)))
