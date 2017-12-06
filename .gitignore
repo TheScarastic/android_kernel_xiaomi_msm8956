@@ -93,3 +93,7 @@ x509.genkey
 
 # Kernel compilation output directory
 out/
+
+
+# Wireguard
+net/wireguard/
