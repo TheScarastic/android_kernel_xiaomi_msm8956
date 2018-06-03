@@ -21,7 +21,7 @@
 #define WCD_MBHC_DEF_BUTTONS 8
 #define WCD_MBHC_KEYCODE_NUM 8
 #define WCD_MBHC_USLEEP_RANGE_MARGIN_US 100
-#define WCD_MBHC_THR_HS_MICB_MV  2700
+#define WCD_MBHC_THR_HS_MICB_MV  2450
 /* z value defined in Ohms */
 #define WCD_MONO_HS_MIN_THR	2
 #define WCD_MBHC_STRINGIFY(s)  __stringify(s)
@@ -390,6 +390,7 @@ struct wcd_mbhc {
 	bool btn_press_intr;
 	bool is_hs_recording;
 	bool is_extn_cable;
+	bool extn_cable_inserted;
 	bool skip_imped_detection;
 	bool is_btn_already_regd;
 
@@ -528,3 +529,4 @@ static inline void wcd_mbhc_deinit(struct wcd_mbhc *mbhc)
 #endif
 
 #endif /* __WCD_MBHC_V2_H__ */
+
